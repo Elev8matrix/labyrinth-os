@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const dynamic = "force-dynamic";
+
 export default async function TeamPage() {
   const users = await db.user.findMany({
     orderBy: { createdAt: "asc" },

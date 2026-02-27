@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function DecisionsPage() {
   const decisions = await db.decision.findMany({
     orderBy: { createdAt: "desc" },

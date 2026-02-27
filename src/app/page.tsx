@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, GitBranch, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const [contracts, requests, redTags, overdueRequests] = await Promise.all([
     db.contract.count(),

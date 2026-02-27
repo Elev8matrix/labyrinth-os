@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function RedTagsPage() {
   const redTags = await db.redTag.findMany({
     orderBy: [{ state: "asc" }, { severity: "desc" }, { createdAt: "desc" }],

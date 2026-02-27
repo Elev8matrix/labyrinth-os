@@ -1,0 +1,320 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  hashedPassword String?
+  role           Role      @default(MEMBER)
+  avatarUrl      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  ownedRequests    Request[]       @relation("RequestOwner")
+  createdRequests  Request[]       @relation("RequestCreator")
+  assignments      Assignment[]
+  redTagsCreated   RedTag[]        @relation("RedTagCreator")
+  decisions        Decision[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  COORDINATOR
+  MEMBER
+}
+
+// ============================================================
+// CONTRACT (TRUNK)
+// ============================================================
+
+model Contract {
+  id            String         @id @default(cuid())
+  name          String
+  clientName    String
+  clientPackage ClientPackage  @default(SILVER)
+  stage         ContractStage  @default(DRAFT)
+  startDate     DateTime?
+  endDate       DateTime?
+  value         Decimal?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  milestones    Milestone[]
+  requests      Request[]
+  redTags       RedTag[]
+  decisions     Decision[]
+
+  @@map("contracts")
+}
+
+enum ClientPackage {
+  BRONZE
+  SILVER
+  GOLD
+  BLACK
+}
+
+enum ContractStage {
+  DRAFT
+  PENDING_ACTIVATION
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================
+// MILESTONE (BRANCH)
+// ============================================================
+
+model Milestone {
+  id          String          @id @default(cuid())
+  contractId  String
+  title       String
+  description String?
+  status      MilestoneStatus @default(NOT_STARTED)
+  dueDate     DateTime?
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  contract    Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  requests    Request[]
+  redTags     RedTag[]
+
+  @@index([contractId])
+  @@map("milestones")
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+// ============================================================
+// REQUEST (LEAF) — Golden Rule enforced by NOT NULL constraints
+// ============================================================
+
+model Request {
+  id              String          @id @default(cuid())
+  contractId      String                              // Golden Rule 1: MUST have contract anchor
+  milestoneId     String?                             // Optional branch anchor
+  title           String                              // Required
+  description     String?
+  tag             RequestTag                          // Golden Rule 2: MUST have tag
+  priority        Priority        @default(NORMAL)    // Golden Rule 2: MUST have priority
+  state           RequestState    @default(OPEN)
+  ownerId         String                              // Golden Rule 2: MUST have owner
+  dueAt           DateTime                            // Golden Rule 2: MUST have due date
+  escalationLevel EscalationLevel @default(NONE)
+
+  // Timeline
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  // Blocking
+  blockedByRedTagId String?
+
+  createdById     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  contract        Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone       Milestone?      @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  owner           User            @relation("RequestOwner", fields: [ownerId], references: [id])
+  createdBy       User?           @relation("RequestCreator", fields: [createdById], references: [id])
+  assignments     Assignment[]
+  redTags         RedTag[]
+
+  @@index([contractId, state])
+  @@index([ownerId, state, dueAt])
+  @@index([dueAt])
+  @@map("requests")
+}
+
+enum RequestTag {
+  TASK
+  DOCUMENT_REQUEST
+  MEETING_REQUEST
+  DECISION_REQUEST
+  DELIVERABLE
+  APPROVAL
+  BILLING
+  CLIENT_REQUEST
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum RequestState {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+enum EscalationLevel {
+  NONE
+  REMINDER
+  WARNING
+  ESCALATED
+}
+
+// ============================================================
+// ASSIGNMENT (team member - request)
+// ============================================================
+
+model Assignment {
+  id         String   @id @default(cuid())
+  requestId  String
+  userId     String
+  assignedAt DateTime @default(now())
+
+  request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([requestId, userId])
+  @@map("assignments")
+}
+
+// ============================================================
+// RED TAG (blocking system)
+// ============================================================
+
+model RedTag {
+  id           String        @id @default(cuid())
+  contractId   String
+  milestoneId  String?
+  requestId    String?
+  severity     RedTagSeverity
+  title        String
+  description  String?
+  state        RedTagState   @default(OPEN)
+
+  createdById  String?
+  resolvedById String?
+  resolvedAt   DateTime?
+  resolutionNotes String?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  contract     Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone    Milestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  request      Request?      @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  createdBy    User?         @relation("RedTagCreator", fields: [createdById], references: [id])
+
+  @@index([contractId, state])
+  @@index([severity, state])
+  @@map("red_tags")
+}
+
+enum RedTagSeverity {
+  WARNING     // Blocks request
+  CRITICAL    // Blocks milestone
+  BLOCKER     // Blocks contract
+}
+
+enum RedTagState {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+// ============================================================
+// DECISION MEMORY
+// ============================================================
+
+model Decision {
+  id           String           @id @default(cuid())
+  contractId   String
+  title        String
+  rationale    String
+  category     DecisionCategory @default(OPERATIONAL)
+  status       DecisionStatus   @default(ACTIVE)
+  outcome      OutcomeRating    @default(PENDING)
+  outcomeNotes String?
+
+  decidedById  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  // Relations
+  contract     Contract         @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  decidedBy    User?            @relation(fields: [decidedById], references: [id])
+
+  @@index([contractId, createdAt])
+  @@map("decisions")
+}
+
+enum DecisionCategory {
+  STRATEGIC
+  OPERATIONAL
+  FINANCIAL
+  RESOURCE
+  ESCALATION
+  CLIENT_FACING
+}
+
+enum DecisionStatus {
+  ACTIVE
+  SUPERSEDED
+  REVERSED
+  ARCHIVED
+}
+
+enum OutcomeRating {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  PENDING
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entity     String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

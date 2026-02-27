@@ -2,6 +2,15 @@ import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { StatusBadge } from "@/components/status-badge";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -45,7 +54,7 @@ export default async function ContractDetailPage({
         <div>
           <Link
             href="/contracts"
-            className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block"
+            className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block transition-colors"
           >
             &larr; All contracts
           </Link>
@@ -53,8 +62,8 @@ export default async function ContractDetailPage({
           <p className="text-muted-foreground">{contract.clientName}</p>
         </div>
         <div className="flex gap-2">
-          <StageBadge stage={contract.stage} />
-          <PackageBadge pkg={contract.clientPackage} />
+          <StatusBadge type="stage" value={contract.stage} />
+          <StatusBadge type="package" value={contract.clientPackage} />
         </div>
       </div>
 
@@ -103,7 +112,7 @@ export default async function ContractDetailPage({
                 {contract.milestones.map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
                   >
                     <div>
                       <p className="font-medium text-sm">{m.title}</p>
@@ -117,7 +126,7 @@ export default async function ContractDetailPage({
                       <span className="text-xs text-muted-foreground">
                         {m._count.requests} req
                       </span>
-                      <MilestoneStatusBadge status={m.status} />
+                      <StatusBadge type="milestone" value={m.status} />
                     </div>
                   </div>
                 ))}
@@ -146,7 +155,7 @@ export default async function ContractDetailPage({
                     className="rounded-lg border border-destructive/20 bg-destructive/5 p-3"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <SeverityBadge severity={rt.severity} />
+                      <StatusBadge type="severity" value={rt.severity} />
                       <span className="font-medium text-sm">{rt.title}</span>
                     </div>
                     {rt.description && (
@@ -175,55 +184,60 @@ export default async function ContractDetailPage({
               No requests yet
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Title</th>
-                    <th className="pb-2 font-medium">Tag</th>
-                    <th className="pb-2 font-medium">Priority</th>
-                    <th className="pb-2 font-medium">State</th>
-                    <th className="pb-2 font-medium">Owner</th>
-                    <th className="pb-2 font-medium">Due</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contract.requests.map((r) => {
-                    const isOverdue =
-                      r.state !== "COMPLETED" &&
-                      r.state !== "CANCELLED" &&
-                      new Date(r.dueAt) < new Date();
-                    return (
-                      <tr
-                        key={r.id}
-                        className={`border-b last:border-0 ${isOverdue ? "bg-destructive/5" : ""}`}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Tag</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>State</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Due</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contract.requests.map((r) => {
+                  const isOverdue =
+                    r.state !== "COMPLETED" &&
+                    r.state !== "CANCELLED" &&
+                    new Date(r.dueAt) < new Date();
+                  return (
+                    <TableRow
+                      key={r.id}
+                      className={isOverdue ? "bg-destructive/5" : ""}
+                    >
+                      <TableCell className="font-medium">{r.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {r.tag.replace(/_/g, " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge type="priority" value={r.priority} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge type="state" value={r.state} />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {r.owner.name}
+                      </TableCell>
+                      <TableCell
+                        className={
+                          isOverdue
+                            ? "text-destructive font-medium"
+                            : "text-muted-foreground"
+                        }
                       >
-                        <td className="py-2 font-medium">{r.title}</td>
-                        <td className="py-2">
-                          <Badge variant="outline" className="text-xs">
-                            {r.tag.replace(/_/g, " ")}
-                          </Badge>
-                        </td>
-                        <td className="py-2">
-                          <PriorityBadge priority={r.priority} />
-                        </td>
-                        <td className="py-2">
-                          <StateBadge state={r.state} />
-                        </td>
-                        <td className="py-2 text-muted-foreground">
-                          {r.owner.name}
-                        </td>
-                        <td
-                          className={`py-2 ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}
-                        >
-                          {new Date(r.dueAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        {new Date(r.dueAt).toLocaleDateString()}
+                        {isOverdue && (
+                          <span className="ml-1 text-xs">(overdue)</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -239,7 +253,10 @@ export default async function ContractDetailPage({
           <CardContent>
             <div className="space-y-3">
               {contract.decisions.map((d) => (
-                <div key={d.id} className="rounded-lg border p-3">
+                <div
+                  key={d.id}
+                  className="rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-sm">{d.title}</span>
                     <Badge variant="outline" className="text-xs">
@@ -260,97 +277,5 @@ export default async function ContractDetailPage({
         </Card>
       )}
     </div>
-  );
-}
-
-function StageBadge({ stage }: { stage: string }) {
-  const colors: Record<string, string> = {
-    DRAFT: "bg-gray-100 text-gray-700",
-    PENDING_ACTIVATION: "bg-yellow-100 text-yellow-700",
-    ACTIVE: "bg-green-100 text-green-700",
-    ON_HOLD: "bg-orange-100 text-orange-700",
-    COMPLETED: "bg-blue-100 text-blue-700",
-    CANCELLED: "bg-red-100 text-red-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[stage] || "bg-gray-100 text-gray-700"}`}
-    >
-      {stage.replace(/_/g, " ")}
-    </span>
-  );
-}
-
-function PackageBadge({ pkg }: { pkg: string }) {
-  const colors: Record<string, string> = {
-    BRONZE: "bg-amber-100 text-amber-800",
-    SILVER: "bg-slate-100 text-slate-700",
-    GOLD: "bg-yellow-100 text-yellow-800",
-    BLACK: "bg-gray-900 text-white",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[pkg] || "bg-gray-100 text-gray-700"}`}
-    >
-      {pkg}
-    </span>
-  );
-}
-
-function MilestoneStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    NOT_STARTED: "bg-gray-100 text-gray-700",
-    IN_PROGRESS: "bg-blue-100 text-blue-700",
-    COMPLETED: "bg-green-100 text-green-700",
-    ON_HOLD: "bg-orange-100 text-orange-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-700"}`}
-    >
-      {status.replace(/_/g, " ")}
-    </span>
-  );
-}
-
-function SeverityBadge({ severity }: { severity: string }) {
-  const colors: Record<string, string> = {
-    WARNING: "bg-yellow-100 text-yellow-800",
-    CRITICAL: "bg-orange-100 text-orange-800",
-    BLOCKER: "bg-red-100 text-red-800",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${colors[severity] || "bg-gray-100 text-gray-700"}`}
-    >
-      {severity}
-    </span>
-  );
-}
-
-function PriorityBadge({ priority }: { priority: string }) {
-  const colors: Record<string, string> = {
-    LOW: "text-gray-500",
-    NORMAL: "text-foreground",
-    HIGH: "text-orange-600 font-medium",
-    URGENT: "text-red-600 font-bold",
-  };
-  return <span className={`text-xs ${colors[priority] || ""}`}>{priority}</span>;
-}
-
-function StateBadge({ state }: { state: string }) {
-  const colors: Record<string, string> = {
-    OPEN: "bg-blue-100 text-blue-700",
-    IN_PROGRESS: "bg-indigo-100 text-indigo-700",
-    BLOCKED: "bg-red-100 text-red-700",
-    COMPLETED: "bg-green-100 text-green-700",
-    CANCELLED: "bg-gray-100 text-gray-500",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[state] || "bg-gray-100 text-gray-700"}`}
-    >
-      {state.replace(/_/g, " ")}
-    </span>
   );
 }

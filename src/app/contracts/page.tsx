@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/status-badge";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -28,12 +30,9 @@ export default async function ContractsPage() {
             {contracts.length} contract{contracts.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link
-          href="/contracts/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          New Contract
-        </Link>
+        <Button asChild>
+          <Link href="/contracts/new">New Contract</Link>
+        </Button>
       </div>
 
       {contracts.length === 0 ? (
@@ -56,8 +55,8 @@ export default async function ContractsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <StageBadge stage={c.stage} />
-                      <PackageBadge pkg={c.clientPackage} />
+                      <StatusBadge type="stage" value={c.stage} />
+                      <StatusBadge type="package" value={c.clientPackage} />
                     </div>
                   </div>
                 </CardHeader>
@@ -84,39 +83,5 @@ export default async function ContractsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function StageBadge({ stage }: { stage: string }) {
-  const colors: Record<string, string> = {
-    DRAFT: "bg-gray-100 text-gray-700",
-    PENDING_ACTIVATION: "bg-yellow-100 text-yellow-700",
-    ACTIVE: "bg-green-100 text-green-700",
-    ON_HOLD: "bg-orange-100 text-orange-700",
-    COMPLETED: "bg-blue-100 text-blue-700",
-    CANCELLED: "bg-red-100 text-red-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[stage] || "bg-gray-100 text-gray-700"}`}
-    >
-      {stage.replace(/_/g, " ")}
-    </span>
-  );
-}
-
-function PackageBadge({ pkg }: { pkg: string }) {
-  const colors: Record<string, string> = {
-    BRONZE: "bg-amber-100 text-amber-800",
-    SILVER: "bg-slate-100 text-slate-700",
-    GOLD: "bg-yellow-100 text-yellow-800",
-    BLACK: "bg-gray-900 text-white",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[pkg] || "bg-gray-100 text-gray-700"}`}
-    >
-      {pkg}
-    </span>
   );
 }

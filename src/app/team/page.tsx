@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { StatusBadge } from "@/components/status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -35,22 +36,24 @@ export default async function TeamPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {users.map((u) => (
-            <Card key={u.id}>
+            <Card key={u.id} className="transition-colors hover:bg-muted/50">
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                      {u.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                        {u.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <p className="font-medium">{u.name}</p>
                       <p className="text-xs text-muted-foreground">{u.email}</p>
                     </div>
                   </div>
-                  <RoleBadge role={u.role} />
+                  <StatusBadge type="role" value={u.role} />
                 </div>
                 <div className="flex gap-4 text-xs text-muted-foreground">
                   <span>{u._count.ownedRequests} active requests</span>
@@ -62,21 +65,5 @@ export default async function TeamPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function RoleBadge({ role }: { role: string }) {
-  const colors: Record<string, string> = {
-    ADMIN: "bg-purple-100 text-purple-800",
-    MANAGER: "bg-blue-100 text-blue-700",
-    COORDINATOR: "bg-green-100 text-green-700",
-    MEMBER: "bg-gray-100 text-gray-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[role] || ""}`}
-    >
-      {role}
-    </span>
   );
 }

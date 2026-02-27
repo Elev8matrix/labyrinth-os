@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
 import { FileText, GitBranch, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -87,18 +89,21 @@ export default async function DashboardPage() {
             <CardTitle className="text-base">Recent Contracts</CardTitle>
             <Link
               href="/contracts"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               View all
             </Link>
           </CardHeader>
           <CardContent>
             {recentContracts.length === 0 ? (
-              <EmptyState
-                message="No contracts yet"
-                href="/contracts/new"
-                cta="Create first contract"
-              />
+              <div className="text-center py-8">
+                <p className="text-muted-foreground text-sm mb-3">
+                  No contracts yet
+                </p>
+                <Button asChild>
+                  <Link href="/contracts/new">Create first contract</Link>
+                </Button>
+              </div>
             ) : (
               <div className="space-y-3">
                 {recentContracts.map((c) => (
@@ -122,7 +127,7 @@ export default async function DashboardPage() {
                           {c._count.redTags} red tags
                         </Badge>
                       )}
-                      <StageBadge stage={c.stage} />
+                      <StatusBadge type="stage" value={c.stage} />
                     </div>
                   </Link>
                 ))}
@@ -137,7 +142,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-base">Overdue Requests</CardTitle>
             <Link
               href="/requests"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               View all
             </Link>
@@ -189,13 +194,13 @@ function StatCard({
 }) {
   const content = (
     <Card
-      className={
+      className={`transition-colors ${href ? "hover:bg-muted/50 cursor-pointer" : ""} ${
         variant === "destructive"
           ? "border-destructive/50"
           : variant === "warning"
             ? "border-orange-500/50"
             : ""
-      }
+      }`}
     >
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
@@ -220,46 +225,6 @@ function StatCard({
   );
 
   return href ? <Link href={href}>{content}</Link> : content;
-}
-
-function StageBadge({ stage }: { stage: string }) {
-  const colors: Record<string, string> = {
-    DRAFT: "bg-gray-100 text-gray-700",
-    PENDING_ACTIVATION: "bg-yellow-100 text-yellow-700",
-    ACTIVE: "bg-green-100 text-green-700",
-    ON_HOLD: "bg-orange-100 text-orange-700",
-    COMPLETED: "bg-blue-100 text-blue-700",
-    CANCELLED: "bg-red-100 text-red-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[stage] || "bg-gray-100 text-gray-700"}`}
-    >
-      {stage.replace("_", " ")}
-    </span>
-  );
-}
-
-function EmptyState({
-  message,
-  href,
-  cta,
-}: {
-  message: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <div className="text-center py-8">
-      <p className="text-muted-foreground text-sm mb-3">{message}</p>
-      <Link
-        href={href}
-        className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-      >
-        {cta}
-      </Link>
-    </div>
-  );
 }
 
 function getOverdueDays(dueAt: Date): string {

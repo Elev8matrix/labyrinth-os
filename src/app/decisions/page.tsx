@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusBadge } from "@/components/status-badge";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function DecisionsPage() {
       ) : (
         <div className="grid gap-4">
           {decisions.map((d) => (
-            <Card key={d.id}>
+            <Card key={d.id} className="transition-colors hover:bg-muted/50">
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-medium">{d.title}</h3>
@@ -40,7 +41,7 @@ export default async function DecisionsPage() {
                     <Badge variant="outline" className="text-xs">
                       {d.category}
                     </Badge>
-                    <OutcomeBadge outcome={d.outcome} />
+                    <StatusBadge type="outcome" value={d.outcome} />
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
@@ -51,16 +52,16 @@ export default async function DecisionsPage() {
                     {d.outcomeNotes}
                   </p>
                 )}
-                <div className="flex gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <Link
                     href={`/contracts/${d.contract.id}`}
-                    className="hover:underline"
+                    className="hover:underline transition-colors hover:text-foreground"
                   >
                     {d.contract.name}
                   </Link>
                   {d.decidedBy && <span>by {d.decidedBy.name}</span>}
                   <span>{new Date(d.createdAt).toLocaleDateString()}</span>
-                  <StatusBadge status={d.status} />
+                  <StatusBadge type="decisionStatus" value={d.status} />
                 </div>
               </CardContent>
             </Card>
@@ -68,33 +69,5 @@ export default async function DecisionsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function OutcomeBadge({ outcome }: { outcome: string }) {
-  const colors: Record<string, string> = {
-    POSITIVE: "bg-green-100 text-green-700",
-    NEUTRAL: "bg-gray-100 text-gray-700",
-    NEGATIVE: "bg-red-100 text-red-700",
-    PENDING: "bg-blue-100 text-blue-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[outcome] || ""}`}
-    >
-      {outcome}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    ACTIVE: "text-green-600",
-    SUPERSEDED: "text-yellow-600",
-    REVERSED: "text-red-600",
-    ARCHIVED: "text-gray-500",
-  };
-  return (
-    <span className={`font-medium ${colors[status] || ""}`}>{status}</span>
   );
 }

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatusBadge } from "@/components/status-badge";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export default async function RedTagsPage() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <SeverityBadge severity={rt.severity} />
+                        <StatusBadge type="severity" value={rt.severity} />
                         <span className="font-medium">{rt.title}</span>
                       </div>
                       {rt.description && (
@@ -64,7 +64,7 @@ export default async function RedTagsPage() {
                       <div className="flex gap-3 text-xs text-muted-foreground pt-1">
                         <Link
                           href={`/contracts/${rt.contract.id}`}
-                          className="hover:underline"
+                          className="hover:underline transition-colors hover:text-foreground"
                         >
                           {rt.contract.name}
                         </Link>
@@ -79,9 +79,7 @@ export default async function RedTagsPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <RedTagStateBadge state={rt.state} />
-                    </div>
+                    <StatusBadge type="redTagState" value={rt.state} />
                   </div>
                   {rt.resolutionNotes && (
                     <p className="text-xs text-muted-foreground mt-2 bg-muted/50 rounded p-2">
@@ -95,42 +93,5 @@ export default async function RedTagsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function SeverityBadge({ severity }: { severity: string }) {
-  const colors: Record<string, string> = {
-    WARNING: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    CRITICAL: "bg-orange-100 text-orange-800 border-orange-300",
-    BLOCKER: "bg-red-100 text-red-800 border-red-300",
-  };
-  const scope: Record<string, string> = {
-    WARNING: "Blocks request",
-    CRITICAL: "Blocks milestone",
-    BLOCKER: "Blocks contract",
-  };
-  return (
-    <span
-      title={scope[severity]}
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold ${colors[severity] || ""}`}
-    >
-      {severity}
-    </span>
-  );
-}
-
-function RedTagStateBadge({ state }: { state: string }) {
-  const colors: Record<string, string> = {
-    OPEN: "bg-red-100 text-red-700",
-    ACKNOWLEDGED: "bg-yellow-100 text-yellow-700",
-    RESOLVED: "bg-green-100 text-green-700",
-    DISMISSED: "bg-gray-100 text-gray-500",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[state] || ""}`}
-    >
-      {state}
-    </span>
   );
 }

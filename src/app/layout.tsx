@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthSessionProvider } from "@/components/session-provider";
 import { Sidebar, MobileHeader } from "@/components/sidebar";
 import "./globals.css";
 
@@ -29,16 +30,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <MobileHeader />
-            <main className="flex-1 overflow-y-auto bg-muted/30">
-              {children}
-            </main>
+        <AuthSessionProvider>
+          <div className="flex h-screen overflow-hidden">
+            <Sidebar />
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <MobileHeader />
+              <main className="flex-1 overflow-y-auto bg-muted/30">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
-        <Toaster />
+          <Toaster />
+        </AuthSessionProvider>
       </body>
     </html>
   );

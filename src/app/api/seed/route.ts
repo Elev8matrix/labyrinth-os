@@ -1,8 +1,11 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 export async function POST() {
   // Clear existing data (in reverse dependency order)
+  await db.accountabilityEvent.deleteMany();
+  await db.accountabilityPolicy.deleteMany();
   await db.auditLog.deleteMany();
   await db.decision.deleteMany();
   await db.assignment.deleteMany();
@@ -12,12 +15,16 @@ export async function POST() {
   await db.contract.deleteMany();
   await db.user.deleteMany();
 
+  // Hash default password for all seed users
+  const hashedPassword = await bcrypt.hash("labyrinth123", 12);
+
   // Users
   const admin = await db.user.create({
     data: {
       name: "Ayo Elev8",
       email: "ayo@elev8matrix.com",
       role: "ADMIN",
+      hashedPassword,
     },
   });
 
@@ -26,6 +33,7 @@ export async function POST() {
       name: "Sarah Coordinator",
       email: "sarah@elev8matrix.com",
       role: "COORDINATOR",
+      hashedPassword,
     },
   });
 
@@ -34,6 +42,7 @@ export async function POST() {
       name: "James Member",
       email: "james@elev8matrix.com",
       role: "MEMBER",
+      hashedPassword,
     },
   });
 
@@ -271,6 +280,16 @@ export async function POST() {
     },
   });
 
+  // Accountability Policies (package-based escalation timing)
+  await db.accountabilityPolicy.createMany({
+    data: [
+      { clientPackage: "BRONZE", reminderHours: 24, warningHours: 0, escalationHours: 24 },
+      { clientPackage: "SILVER", reminderHours: 24, warningHours: 0, escalationHours: 24 },
+      { clientPackage: "GOLD", reminderHours: 24, warningHours: 0, escalationHours: 12 },
+      { clientPackage: "BLACK", reminderHours: 12, warningHours: 0, escalationHours: 12 },
+    ],
+  });
+
   return NextResponse.json({
     success: true,
     counts: {
@@ -280,6 +299,7 @@ export async function POST() {
       requests: 8,
       redTags: 2,
       decisions: 2,
+      accountabilityPolicies: 4,
     },
   });
 }

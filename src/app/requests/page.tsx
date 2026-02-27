@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -10,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -26,18 +28,26 @@ export default async function RequestsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Requests</h1>
-        <p className="text-muted-foreground">
-          {requests.length} request{requests.length !== 1 ? "s" : ""} across all
-          contracts
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Requests</h1>
+          <p className="text-muted-foreground">
+            {requests.length} request{requests.length !== 1 ? "s" : ""} across all
+            contracts
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/requests/new">New Request</Link>
+        </Button>
       </div>
 
       {requests.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No requests yet.
+            No requests yet.{" "}
+            <Link href="/requests/new" className="text-primary hover:underline">
+              Create one
+            </Link>
           </CardContent>
         </Card>
       ) : (
@@ -66,9 +76,21 @@ export default async function RequestsPage() {
                       key={r.id}
                       className={isOverdue ? "bg-destructive/5" : ""}
                     >
-                      <TableCell className="font-medium">{r.title}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/requests/${r.id}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {r.title}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {r.contract.name}
+                        <Link
+                          href={`/contracts/${r.contract.id}`}
+                          className="hover:underline hover:text-foreground transition-colors"
+                        >
+                          {r.contract.name}
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">

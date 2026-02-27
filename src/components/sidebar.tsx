@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,9 @@ import {
   BookOpen,
   Users,
   Menu,
+  LogOut,
+  Shield,
+  ScrollText,
 } from "lucide-react";
 
 const navigation = [
@@ -28,7 +32,9 @@ const navigation = [
   { name: "Requests", href: "/requests", icon: GitBranch },
   { name: "Red Tags", href: "/red-tags", icon: AlertTriangle },
   { name: "Decisions", href: "/decisions", icon: BookOpen },
+  { name: "Accountability", href: "/accountability", icon: Shield },
   { name: "Team", href: "/team", icon: Users },
+  { name: "Audit Log", href: "/audit", icon: ScrollText },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -61,19 +67,42 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function BrandFooter() {
+function UserFooter() {
+  const { data: session } = useSession();
+
+  const name = session?.user?.name ?? "User";
+  const role = (session?.user as any)?.role ?? "MEMBER";
+  const initials = name
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2);
+
   return (
     <div className="border-t p-3">
-      <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-            E8
-          </AvatarFallback>
-        </Avatar>
-        <div className="text-sm">
-          <p className="font-medium leading-none">Elev8 Matrix</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Admin</p>
+      <div className="flex items-center justify-between rounded-lg px-3 py-2">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-sm">
+            <p className="font-medium leading-none">{name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {role.charAt(0) + role.slice(1).toLowerCase()}
+            </p>
+          </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="sr-only">Sign out</span>
+        </Button>
       </div>
     </div>
   );
@@ -97,7 +126,7 @@ export function Sidebar() {
     <aside className="hidden w-64 border-r bg-background md:flex md:flex-col">
       <BrandHeader />
       <NavLinks />
-      <BrandFooter />
+      <UserFooter />
     </aside>
   );
 }
@@ -117,7 +146,7 @@ export function MobileHeader() {
         <SheetContent side="left" className="w-64 p-0" showCloseButton={false}>
           <BrandHeader />
           <NavLinks onNavigate={() => setOpen(false)} />
-          <BrandFooter />
+          <UserFooter />
         </SheetContent>
       </Sheet>
       <Separator orientation="vertical" className="h-6" />

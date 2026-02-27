@@ -141,12 +141,13 @@ model Request {
   updatedAt       DateTime        @updatedAt
 
   // Relations
-  contract        Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  milestone       Milestone?      @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
-  owner           User            @relation("RequestOwner", fields: [ownerId], references: [id])
-  createdBy       User?           @relation("RequestCreator", fields: [createdById], references: [id])
-  assignments     Assignment[]
-  redTags         RedTag[]
+  contract              Contract              @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone             Milestone?            @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  owner                 User                  @relation("RequestOwner", fields: [ownerId], references: [id])
+  createdBy             User?                 @relation("RequestCreator", fields: [createdById], references: [id])
+  assignments           Assignment[]
+  redTags               RedTag[]
+  accountabilityEvents  AccountabilityEvent[]
 
   @@index([contractId, state])
   @@index([ownerId, state, dueAt])
@@ -297,6 +298,43 @@ enum OutcomeRating {
   NEUTRAL
   NEGATIVE
   PENDING
+}
+
+// ============================================================
+// ACCOUNTABILITY
+// ============================================================
+
+model AccountabilityPolicy {
+  id              String        @id @default(cuid())
+  clientPackage   ClientPackage @unique
+  reminderHours   Int           @default(24)
+  warningHours    Int           @default(0)
+  escalationHours Int           @default(24)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("accountability_policies")
+}
+
+model AccountabilityEvent {
+  id        String                  @id @default(cuid())
+  requestId String
+  type      AccountabilityEventType
+  fromLevel EscalationLevel
+  toLevel   EscalationLevel
+  message   String
+  createdAt DateTime                @default(now())
+
+  request   Request                 @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("accountability_events")
+}
+
+enum AccountabilityEventType {
+  REMINDER
+  WARNING
+  ESCALATION
 }
 
 // ============================================================

@@ -1,10 +1,12 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   const contracts = await db.contract.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
+      milestones: { select: { id: true, title: true }, orderBy: { sortOrder: "asc" } },
       _count: {
         select: {
           requests: true,
